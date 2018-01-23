@@ -1,32 +1,188 @@
+//package components;
+import javax.swing.*;
 
-import java.util.List;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.TreeSelectionModel;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+
+import java.net.URL;
+import java.io.IOException;
+import java.awt.Dimension;
+import java.awt.GridLayout;
 import java.util.Stack;
 
-/**
- *
- * @author Tin
- */
+public class Homework1 extends JPanel
+		implements TreeSelectionListener {
+	private JEditorPane htmlPane;
+	private JTree jTree;
 
-public class Homework1 {
-    
-    public static void main(String[] args) {
-        // Begin of arguments input sample
-        Node root = new Node('E');
-             root.Value = args[0];
-   //     root.Value = "251-*32*+";
-        root = CreateTree(root);
-        //        System.out.println("Ans = "+Calculate(root));
-        String Ans = new String();
-        String[] Answ = Infix(root).split("");
-        for(int i=1; i<Infix(root).length()-1;i++)
+	//Optionally play with line styles.  Possible values are
+	//"Angled" (the default), "Horizontal", and "None".
+	private static boolean playWithLineStyle = false;
+	private static String lineStyle = "Horizontal";
+
+	//Optionally set the look and feel.
+	private static boolean useSystemLookAndFeel = false;
+	public static Node root;
+	public static String Screen;
+
+	public Homework1() {
+		super(new GridLayout(1,0));
+
+		//Create the nodes.
+		DefaultMutableTreeNode top =
+				new DefaultMutableTreeNode(root);
+		CreateUI(root,top);
+
+		//Create a tree that allows one selection at a time.
+		jTree = new JTree(top);
+		jTree.getSelectionModel().setSelectionMode
+				(TreeSelectionModel.SINGLE_TREE_SELECTION);
+
+		//Listen for when the selection changes.
+		jTree.addTreeSelectionListener(this);
+
+		if (playWithLineStyle) {
+			System.out.println("line style = " + lineStyle);
+			jTree.putClientProperty("JTree.lineStyle", lineStyle);
+		}
+
+		//Create the scroll pane and add the tree to it.
+		JScrollPane treeView = new JScrollPane(jTree);
+
+		//Create the HTML viewing pane.
+		htmlPane = new JEditorPane();
+		htmlPane.setEditable(false);
+		JScrollPane htmlView = new JScrollPane(htmlPane);
+
+		//Add the scroll panes to a split pane.
+		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+		splitPane.setTopComponent(treeView);
+		splitPane.setBottomComponent(htmlView);
+
+		Dimension minimumSize = new Dimension(100, 50);
+		htmlView.setMinimumSize(minimumSize);
+		treeView.setMinimumSize(minimumSize);
+		splitPane.setDividerLocation(100);
+		splitPane.setPreferredSize(new Dimension(500, 300));
+        // Icon
+		ImageIcon leafIcon = createImageIcon("middle.gif");
+		if (leafIcon != null) {
+			DefaultTreeCellRenderer renderer =
+					new DefaultTreeCellRenderer();
+			renderer.setClosedIcon(leafIcon);
+			renderer.setOpenIcon(leafIcon);
+			jTree.setCellRenderer(renderer);
+		}
+                
+		add(splitPane);
+	}
+
+	public static ImageIcon createImageIcon(String path) {
+		java.net.URL imgURL = Homework1.class.getResource(path);
+		if (imgURL != null) {
+			return new ImageIcon(imgURL);
+		} else {
+			System.out.println("Couldn't find file!!!");
+			return null;
+		}
+	}
+	public void valueChanged(TreeSelectionEvent e) {
+		DefaultMutableTreeNode node = (DefaultMutableTreeNode)
+				jTree.getLastSelectedPathComponent();
+
+		if (node == null) return;
+		Object nodeInfo = node.getUserObject();
+		DisplayNode((Node)nodeInfo);
+
+	}
+
+	public void DisplayNode(Node n)
+	{
+		SetScreen(n);
+		if(isOperator(n.Op))
+		{
+			Screen=Screen+"="+Calculate(n);
+		}
+		htmlPane.setText(Screen);
+	}
+        
+    public static void CreateUI(Node n, DefaultMutableTreeNode top){
+        if(n.Node_Right!=null)
         {
-            Ans += Answ[i];
+            DefaultMutableTreeNode Right=new DefaultMutableTreeNode(n.Node_Right);
+            top.add(Right);
+            CreateUI(n.Node_Right,Right);
         }
-        System.out.println(Ans + "=" +Calculate(root));
-        //     System.out.println(InOrder(root));
-        // TODO: Implement your project here
+		if(n.Node_Left!=null)
+		{
+			DefaultMutableTreeNode left=new DefaultMutableTreeNode(n.Node_Left);
+			top.add(left);
+			CreateUI(n.Node_Left, left);
+		}
+        
     }
-    
+        
+    public static void SetScreen(Node n)
+    {
+        Screen="";
+        if(isNumber(n.Op))
+        {
+            Screen+=n.Op;
+            System.out.println(n.Op);
+        }else if(isOperator(n.Op))
+        {
+            SetScreen2(n.Node_Right);
+            Screen+=n.Op;
+            System.out.print(n.Op);
+            SetScreen2(n.Node_Left);
+            System.out.print("="+Calculate(n));
+            System.out.println();
+        }
+    }
+
+
+	private static void createAndShowGUI() {
+		if (useSystemLookAndFeel) {
+			try {
+				UIManager.setLookAndFeel(
+						UIManager.getSystemLookAndFeelClassName());
+			} catch (Exception e) {
+				System.err.println("Couldn't use system look and feel.");
+			}
+		}
+
+		//Create and set up the window.
+		JFrame frame = new JFrame("Binary Tree Calculator");
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+		//Add content to the window.
+		frame.add(new Homework1());
+
+		//Display the window.
+		frame.pack();
+		frame.setVisible(true);
+	}
+
+	public static void main(String[] args) {
+            
+		//Schedule a job for the event dispatch thread:
+		//creating and showing this application's GUI.
+            root = new Node('E');
+
+            root.Value = args[0];
+            //root.Value = "251-*32*+";
+            root = CreateTree(root);
+		javax.swing.SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				createAndShowGUI();
+			}
+		});
+	}
+
+
     public static Node CreateTree(Node n)
     {
         Stack<Character> Stack_Question=new Stack<Character>();
@@ -40,32 +196,50 @@ public class Homework1 {
             System.out.println("Wrong Input!!!");
             return null;
         }else
-            n = toTree(n,Stack_Question);
+        n = toTree(n,Stack_Question);
         
         return n;
     }
-    
+
+    public static void SetScreen2(Node n)
+    {
+        if(isNumber(n.Op))
+        {
+            Screen+=n.Op;
+            System.out.print(n.Op);
+        }else if(isOperator(n.Op))
+        {
+            Screen+="(";
+            System.out.print("(");
+            SetScreen2(n.Node_Right);
+            Screen+=n.Op;
+            System.out.print(n.Op);
+            SetScreen2(n.Node_Left);
+            Screen+=")";
+            System.out.print(")");
+        }
+    }
     public static String Infix(Node n){
         
         if(isOperator(n.Op))
         {
             return ("(" +Infix(n.Node_Right)+ n.Op+ Infix(n.Node_Left) +")");
-        }else
+        }else 
         {
             return (""+ n.Op);
         }
-        
+             
     }
     
     public static String InOrder(Node n){
         if( n.Node_Left != null && n.Node_Right != null){
-            return (n.Op +" " + InOrder(n.Node_Right) + " " + InOrder(n.Node_Left)) ;
+             return (n.Op +" " + InOrder(n.Node_Right) + " " + InOrder(n.Node_Left)) ;   
         }else return (n.Op+"");
-        
+
     }
-    
+
     public static int Calculate(Node n){
-        //       System.out.println(n.Op);
+ //       System.out.println(n.Op);
         if(isOperator(n.Op)){
             if(n.Op=='+')
             {
@@ -88,14 +262,18 @@ public class Homework1 {
         
         return n.Ans;
     }
-    
+
+
     public static class Node{
         String Value;
-        char Op;
+        Character Op;
         int Ans;
         Node Node_Left, Node_Right;
         public Node(Character Op){
             this.Op = Op;
+        }
+        public String toString() {
+            return Op.toString();
         }
     }
     
@@ -103,7 +281,7 @@ public class Homework1 {
     {
         root = new Node(Ques.pop());
         if(isOperator(Ques.peek())){
-            //       System.out.println(isOperator(Ques.peek()) +" OP Left "+ Ques.peek());
+     //       System.out.println(isOperator(Ques.peek()) +" OP Left "+ Ques.peek());
             if(Ques.size()<=1){
                 System.out.println("Error Ran Out of Number L");
                 return root;
@@ -112,15 +290,15 @@ public class Homework1 {
             }
         }else if(isNumber(Ques.peek()))
         {
-            //        System.out.println(root.Op + " Number Left");
+    //        System.out.println(root.Op + " Number Left");
             root.Node_Left = new Node(Ques.pop());
         }else
         {
-            System.out.println("Error Wrong Input L!!");
-            return root;
+                System.out.println("Error Wrong Input L!!");
+                return root;
         }
         if(isOperator(Ques.peek())){
-            //         System.out.println(isOperator(Ques.peek()) +" OP Right "+ Ques.peek());
+   //         System.out.println(isOperator(Ques.peek()) +" OP Right "+ Ques.peek());
             if(Ques.capacity()<=1){
                 System.out.println("Error Ran Out of Number R");
                 return root;
@@ -129,25 +307,25 @@ public class Homework1 {
             }
         }else if(isNumber(Ques.peek()))
         {
-            //         System.out.println(root.Op + " Number Right");
+   //         System.out.println(root.Op + " Number Right");
             root.Node_Right = new Node(Ques.pop());
         }else
         {
-            System.out.println("Error Wrong Input!! R");
-            return root;
+                System.out.println("Error Wrong Input!! R");
+                return root;
         }
-        
+
         return root;
     }
     
     
-    public static boolean isNumber(char s) {
+    public static boolean isNumber(char s) {  
         
-        if ("1234567890".indexOf(s) != -1){
-            return true;
-        }
-        return false;
-    }
+       if ("1234567890".indexOf(s) != -1){
+           return true;
+       }
+       return false;
+    }  
     
     public static boolean isOperator(char s){
         if("+-*/".indexOf(s)!=-1)
@@ -155,7 +333,9 @@ public class Homework1 {
             return true;
         }
         return false;
-    }
+    }   
 }
+
+
 
 
