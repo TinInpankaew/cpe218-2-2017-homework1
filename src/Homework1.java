@@ -94,19 +94,9 @@ public class Homework1 extends JPanel
 				jTree.getLastSelectedPathComponent();
 
 		if (node == null) return;
-		Object nodeInfo = node.getUserObject();
-		DisplayNode((Node)nodeInfo);
-
-	}
-
-	public void DisplayNode(Node n)
-	{
-		SetScreen(n);
-		if(isOperator(n.Op))
-		{
-			Screen=Screen+"="+Calculate(n);
-		}
-		htmlPane.setText(Screen);
+        Object nodeInfo = node.getUserObject();
+        Screen = GetSol((Node)nodeInfo);
+        htmlPane.setText(Screen);
 	}
         
     public static void CreateUI(Node n, DefaultMutableTreeNode top){
@@ -123,24 +113,6 @@ public class Homework1 extends JPanel
 			CreateUI(n.Node_Left, left);
 		}
         
-    }
-        
-    public static void SetScreen(Node n)
-    {
-        Screen="";
-        if(isNumber(n.Op))
-        {
-            Screen+=n.Op;
-            System.out.println(n.Op);
-        }else if(isOperator(n.Op))
-        {
-            SetScreen2(n.Node_Right);
-            Screen+=n.Op;
-            System.out.print(n.Op);
-            SetScreen2(n.Node_Left);
-            System.out.print("="+Calculate(n));
-            System.out.println();
-        }
     }
 
 
@@ -175,12 +147,28 @@ public class Homework1 extends JPanel
             root.Value = args[0];
             //root.Value = "251-*32*+";
             root = CreateTree(root);
+        System.out.println(GetSol(root));
 		javax.swing.SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				createAndShowGUI();
 			}
 		});
 	}
+            
+    public static String GetSol(Node n)
+    {
+        String Ans = new String();
+        String[] Answ = Infix(n).split("");
+        for(int i=1; i<Infix(n).length()-1;i++)
+        {
+            Ans += Answ[i];
+        }
+        if(isNumber(n.Op))
+        {
+            return (n.Op+"");
+        }else
+            return (Ans + "=" +Calculate(n));
+    }
 
 
     public static Node CreateTree(Node n)
@@ -201,24 +189,6 @@ public class Homework1 extends JPanel
         return n;
     }
 
-    public static void SetScreen2(Node n)
-    {
-        if(isNumber(n.Op))
-        {
-            Screen+=n.Op;
-            System.out.print(n.Op);
-        }else if(isOperator(n.Op))
-        {
-            Screen+="(";
-            System.out.print("(");
-            SetScreen2(n.Node_Right);
-            Screen+=n.Op;
-            System.out.print(n.Op);
-            SetScreen2(n.Node_Left);
-            Screen+=")";
-            System.out.print(")");
-        }
-    }
     public static String Infix(Node n){
         
         if(isOperator(n.Op))
